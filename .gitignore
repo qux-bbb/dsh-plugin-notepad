@@ -1,0 +1,14 @@
+# Local harness state: this repo's own notes are written here.
+.dsh/
+
+# Dev-only junction created by scripts/dev-link.ps1 (never commit it).
+node_modules/
+
+# Installer backups of cordis.patch.yml.
+cordis.patch.yml.bak-*
+*.bak-notepad-*
+
+# OS / editor noise.
+Thumbs.db
+Desktop.ini
+.DS_Store

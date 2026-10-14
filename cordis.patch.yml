@@ -1,0 +1,9 @@
+# The layer this bundle contributes to a profile that lists `dsh-plugin-notepad`
+# in its `dsh.profile.bundles`. Rows reference the plugin by package name rather
+# than by a source path, so Node's module resolution finds the installed copy.
+- insert:
+    - id: notepad
+      name: dsh-plugin-notepad
+      config:
+        level: both
+        defaultScope: project
