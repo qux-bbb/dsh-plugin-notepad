@@ -39,7 +39,7 @@ dsh plugin --profile desktop add dsh-plugin-notepad
 
 # 或直接从 GitHub 源码装：本包是纯 JS、没有构建步骤，因此不需要 prepare 脚本，
 # 也就不会触发 pnpm 的 allowBuilds 构建授权
-dsh plugin --profile desktop add github:<你的用户名>/dsh-plugin-notepad
+dsh plugin --profile desktop add github:qux-bbb/dsh-plugin-notepad
 
 # 只验证这一层、不启动
 dsh --profile desktop --dump-config     # 应能看到 "# == dsh-plugin-notepad" 这一层
@@ -48,7 +48,7 @@ dsh --profile desktop --dump-config     # 应能看到 "# == dsh-plugin-notepad"
 dsh plugin --profile desktop remove dsh-plugin-notepad
 ```
 
-> 用 git 装请锁定 commit（`github:<用户>/dsh-plugin-notepad#<sha>`），避免后续推送悄悄改变实际运行的内容。
+> 用 git 装请锁定 commit（`github:qux-bbb/dsh-plugin-notepad#<sha>`），避免后续推送悄悄改变实际运行的内容。
 
 ### 不想走 `dsh plugin`：手动安装器
 
@@ -284,7 +284,7 @@ powershell -File scripts\dev-link.ps1
 
 1. **加话题**：在 GitHub 仓库页 About → Topics 加 `dsh-plugin`（或 `gh repo edit --add-topic dsh-plugin`），仓库就会出现在 [github.com/topics/dsh-plugin](https://github.com/topics/dsh-plugin) 下。这是官方 README「社区与支持」给出的被发现方式；`package.json` 的 `keywords` 只影响 npm 搜索。
 2. **发 npm**：在仓库根执行 `npm publish`。纯 JS、无构建步骤，所以不需要 `prepare`/`prepublishOnly`；`files` 已列出 `lib`、`cordis.patch.yml`、`README.md`、`LICENSE`。
-3. **从 GitHub 装**：`dsh plugin --profile <name> add github:<用户>/dsh-plugin-notepad`。因为本包没有构建脚本，pnpm 不会要求 `allowBuilds` 授权。
+3. **从 GitHub 装**：`dsh plugin --profile <name> add github:qux-bbb/dsh-plugin-notepad`。因为本包没有构建脚本，pnpm 不会要求 `allowBuilds` 授权。
 
 许可证：[MIT](LICENSE)。
 
