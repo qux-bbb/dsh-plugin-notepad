@@ -29,6 +29,14 @@
     "cordis"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qux-bbb/dsh-plugin-notepad.git"
+  },
+  "homepage": "https://github.com/qux-bbb/dsh-plugin-notepad#readme",
+  "bugs": {
+    "url": "https://github.com/qux-bbb/dsh-plugin-notepad/issues"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/dsh-tools": "*",
