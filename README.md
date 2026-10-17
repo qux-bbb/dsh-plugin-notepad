@@ -20,7 +20,7 @@ dsh-plugin-notepad/            # 仓库根就是插件包根（dsh plugin add gi
 ├─ lib/store.js                # 存储层：路径解析、JSONL 读写、编辑/删除、裁剪、并发串行化
 ├─ lib/api.js                  # 面板用的 JSON API（纯处理函数，可单测）
 ├─ lib/client.js               # 浏览器半：手写的经典脚本，无需编译
-├─ test/                       # node:test 单元测试（60 个）
+├─ test/                       # node:test 单元测试（67 个）
 ├─ scripts/
 │  ├─ install-notepad.mjs      # 手动安装/更新/卸载（profile 级 或 全局级）
 │  ├─ smoke-runtime.mjs        # 真 Cordis + 真 tool registry 的端到端冒烟测试
@@ -238,14 +238,14 @@ File: D:\work\repo\.dsh\notepad\notes.jsonl
 {"id":"p-mv6ieauq-01fmiy","at":"2026-10-13T09:59:19.922Z","scope":"project","tags":["errand"],"content":"remember the milk"}
 ```
 
-同一个 store 实例内的写入通过 promise 队列串行，并发调用不会写出半行；`maxNotes` 裁剪时先写 `.tmp` 再 rename。
+写入按**笔记文件**（而不是按 store 实例）串行：两个 store 落到同一个项目文件时——例如同一项目下两个不同 cwd 的会话——也不会互相覆盖或写出半行。改写与 `maxNotes` 裁剪都先写一个唯一名字的临时文件再 rename。
 
 ## 验证
 
 已跑过并通过的验证（本机 DSH `0.1.7-rc.2` / Node 24.21.0）：
 
 ```powershell
-# 1) 60 个单元测试：路径/作用域解析、JSONL 读写、并发、裁剪、参数校验、命令注册（在仓库根跑）
+# 1) 67 个单元测试：路径/作用域解析、JSONL 读写、并发、裁剪、参数校验、命令注册（在仓库根跑）
 & $node --test
 
 # 2) 端到端冒烟：真 Cordis Context + 真 dsh-tools 注册表，走 ctx.tools.execute
@@ -258,7 +258,7 @@ File: D:\work\repo\.dsh\notepad\notes.jsonl
 
 结果摘要：
 
-- `node --test`：**60/60 通过**，覆盖三类：存储层（路径/作用域、JSONL 读写、编辑、删除、裁剪、并发串行化）、`lib/api.js`（会话栅栏 401/403、标记头 403、状态形状、项目解析优先级 = 手动 > 会话 > 最近项目、增删改查、逐项目隔离、错误码）、`lib/client.js`（bundle 注册与 id、样式同步认领、`main` + `panellist` + 会话桥接三处注册、桥接把 `sessionId` 映射成 `SessionSummary.cwd`、下拉选项必含当前项目、面板跟随会话时请求 `project=<会话 cwd>`、与宿主 API 的路由契约一致），以及宿主半的 `listProjects`（按工作空间 `updatedAt` 倒序、无注册表或抛错时降级为空列表）。
+- `node --test`：**67/67 通过**，覆盖四类：存储层（路径/作用域、JSONL 读写、编辑、删除、裁剪、并发串行化）、**跨实例共享一个笔记文件**（同一项目根下两个 cwd 的会话并发增删改：不丢笔记、不出现 `rename` ENOENT、不残留 `.tmp`、`maxNotes` 仍然生效）、`lib/api.js`（会话栅栏 401/403、标记头 403、状态形状、项目解析优先级 = 手动 > 会话 > 最近项目、增删改查、**变更响应返回整层而非 defaultLimit**、逐项目隔离、错误码）、`lib/client.js`（bundle 注册与 id、样式同步认领、`main` + `panellist` + 会话桥接三处注册、桥接把 `sessionId` 映射成 `SessionSummary.cwd`、下拉选项必含当前项目、面板跟随会话时请求 `project=<会话 cwd>`、与宿主 API 的路由契约一致），以及宿主半的 `listProjects`（按工作空间 `updatedAt` 倒序、无注册表或抛错时降级为空列表）与 store 缓存的逐出（超过 32 个目录后仍能读回各自的笔记）。
 - `smoke-runtime.mjs`：三个工具注册成功；`notepad_add`/`list`/`clear` 往返正确（含只在 project 层删除、global 不受影响）；`confirm: false` 被拒；非法 `scope` 在派发前被注册表按参数 schema 拒绝（`INVALID_ARGS`）。
 - 真实 loader（新建临时 profile，与 desktop 相同的 bundle 栈）：`--dump-config` 组合出 notepad 条目；`--dump-config-schema` 报告 `"status": "schema"` 并投影出完整 Config schema，说明插件模块确实在真实 app 进程里被导入成功。
 - 全局级安装：在隔离的 `DSH_HOME` 下验证 home 补丁层插入条目、绝对 `file://` 名称可解析、schema 正常。

@@ -245,4 +245,33 @@ describe('notepad api', () => {
     assert.equal(second.body.levels.project.notes[0].content, 'in the other')
     assert.equal(api.stores.size, 2)
   })
+
+  it('answers a mutation with the whole level, not just the default limit', async () => {
+    const api = makeApi('untruncated')
+    // More notes than `defaultLimit` (20): the panel loads the level with
+    // `limit: 0` and merges this payload over it, so a capped reply here would
+    // silently shrink the visible list after an add, edit, or delete.
+    for (let index = 0; index < 25; index += 1) {
+      await api.send('POST', '/notes', { body: { project: api.cwd, scope: 'project', content: `note ${index}` } })
+    }
+
+    const added = await api.send('POST', '/notes', { body: { project: api.cwd, scope: 'project', content: 'latest' } })
+    assert.equal(added.body.total, 26)
+    assert.equal(added.body.notes.length, 26)
+
+    const edited = await api.send('PUT', '/notes', {
+      body: { project: api.cwd, scope: 'project', id: added.body.note.id, content: 'edited' },
+    })
+    assert.equal(edited.body.notes.length, 26)
+    assert.equal(edited.body.notes[0].content, 'edited')
+
+    const deleted = await api.send('DELETE', '/notes', {
+      body: { project: api.cwd, scope: 'project', id: added.body.note.id },
+    })
+    assert.equal(deleted.body.total, 25)
+    assert.equal(deleted.body.notes.length, 25)
+
+    const cleared = await api.send('POST', '/clear', { body: { project: api.cwd, scope: 'project' } })
+    assert.equal(cleared.body.notes.length, 0)
+  })
 })

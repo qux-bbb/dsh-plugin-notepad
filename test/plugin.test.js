@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, describe, it } from 'node:test'
@@ -207,6 +207,47 @@ describe('apply', () => {
     await add.execute({ content: 'in another project' }, exec(join(root, 'proj-b')))
     assert.equal((await list.execute({ scope: 'project' }, exec(join(root, 'proj-a')))).total, 1)
     assert.equal((await list.execute({ scope: 'project' }, exec(join(root, 'proj-b')))).total, 1)
+  })
+
+  it('serializes concurrent tool calls from two sessions inside one project', async () => {
+    const { ctx, tools } = makeContext()
+    const projectRoot = join(root, 'shared-project')
+    const inner = join(projectRoot, 'src')
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(inner, { recursive: true })
+    // `maxNotes` makes every append rewrite the file, which is where two stores
+    // over one project file used to collide on a shared `${file}.tmp`.
+    apply(ctx, { dshHome: root, projectRootMarkers: ['.git'], maxNotes: 10 })
+    const add = tools.get('notepad_add')
+    const list = tools.get('notepad_list')
+
+    const outcomes = await Promise.allSettled(
+      Array.from({ length: 30 }, (_, index) => add.execute(
+        { content: `note ${index}` },
+        exec(index % 2 === 0 ? projectRoot : inner),
+      )),
+    )
+    assert.deepEqual([...new Set(outcomes.map((outcome) => outcome.status))], ['fulfilled'])
+    assert.equal((await list.execute({ scope: 'project' }, exec(projectRoot))).total, 10)
+    assert.equal((await list.execute({ scope: 'project' }, exec(inner))).total, 10)
+  })
+
+  it('evicts the oldest cached store past the cache limit without losing notes', async () => {
+    const { ctx, tools } = makeContext()
+    apply(ctx, { globalDir: join(root, 'evict-global'), dshHome: root, projectRootMarkers: [] })
+    const add = tools.get('notepad_add')
+    const list = tools.get('notepad_list')
+    // More directories than the cache holds: each one is written once, then the
+    // oldest is evicted and must be re-created from disk on the next read.
+    const directories = Array.from({ length: 40 }, (_, index) => join(root, 'evict', `cwd-${index}`))
+    for (const [index, cwd] of directories.entries()) {
+      await add.execute({ content: `note ${index}` }, exec(cwd))
+    }
+    for (const [index, cwd] of directories.entries()) {
+      const listed = await list.execute({ scope: 'project' }, exec(cwd))
+      assert.equal(listed.total, 1)
+      assert.equal(listed.notes[0].content, `note ${index}`)
+    }
   })
 
   it('mounts the panel route only when a Web server exists', () => {
