@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-notepad",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple notepad plugin for DeepSeek Harness: record short notes in a global ($DSH_HOME) or project (<projectRoot>/.dsh) level",
   "type": "module",
   "main": "lib/index.js",
